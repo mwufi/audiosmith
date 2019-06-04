@@ -1,0 +1,29 @@
+#console {
+  border: 1px solid blanchedalmond;
+  height: 1em;
+  padding: 0.4em;
+  margin: 1em;
+}
+
+
+.container{
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  background: salmon;
+}
+
+button {
+  color:white;
+  background: #5edeb3;
+  margin: 10px;
+  padding: 1.4em 2em;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  border-radius: .2em;
+  cursor: pointer;
+
+  transition: .2s background;
+
+}
