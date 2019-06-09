@@ -7,3 +7,16 @@
   margin: 0.2em;
   padding: 0.2em 1em;
 }
+
+#container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+#scene_container {
+  position: absolute;
+  left: 30%;
+  height: 80%;
+  width: 60%;
+}
