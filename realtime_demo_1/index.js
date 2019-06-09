@@ -84,9 +84,10 @@ function displayModel(scene){
     while (size.length < 3){
       size.unshift(1);
     }
-    log(size);
     scene.add( rotatingCube(x, size.slice(-3)) );
   }
+
+  log("Layer depth: " + x);
 }
 
 let controls;
@@ -102,7 +103,7 @@ function createOrbitCamera( renderer ){
 
   // every object is initially created at ( 0, 0, 0 )
   // we'll move the camera back a bit so that we can view the scene
-  camera.position.set( 100, 0, 0 );
+  camera.position.set( 100, 20, 20 );
 
   controls = new THREE.OrbitControls( camera, renderer.domElement  );
 }
@@ -110,20 +111,20 @@ function createOrbitCamera( renderer ){
 function addLights( scene ){
 
   // Create a directional light
-  let light = new THREE.DirectionalLight( 0xffffff, 5.0 );
+  let light = new THREE.DirectionalLight( 0xffffff, 3.0 );
 
   // move the light back and up a bit
-  light.position.set( 2, 10, -10 );
+  light.position.set( -20, 20, 20 );
 
   // remember to add the light to the scene
   scene.add( light );
 
 
   // Create a directional light
-  light = new THREE.DirectionalLight( 0xffffff, 2.0 );
+  light = new THREE.DirectionalLight( 0xffff00, 3.0 );
 
   // move the light back and up a bit
-  light.position.set( 10, 10, 10 );
+  light.position.set( 100, 20, 20 );
 
   // remember to add the light to the scene
   scene.add( light );
