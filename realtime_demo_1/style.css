@@ -1,0 +1,9 @@
+#console li {
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  color: darkblue;
+  font-size: 0.9em;
+  list-style: none;
+  background: #eef;
+  margin: 0.2em;
+  padding: 0.2em 1em;
+}
