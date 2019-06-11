@@ -17,6 +17,12 @@ function log(msg, default_messenger = "network"){
 async function loadModel(){
   log("Loading model...")
   model = await tf.loadGraphModel(modelUrl);
+  // model = tf.sequential({
+  //   layers: [
+  //     tf.layers.dense({inputShape: [784], units: 32, activation: 'relu'}),
+  //     tf.layers.dense({units: 10, activation: 'softmax'}),
+  //   ]
+  //  });
 }
 
 function printModelWeights(){
@@ -50,9 +56,10 @@ let stats;
 
 // helper method for adding a rotating cube
 function rotatingCube(x, shape){
+  const ff = (x) => Math.pow(x, 0.8) / 10;
 
   // create a geometry
-  const geometry = new THREE.BoxBufferGeometry( shape[0]/10, shape[1]/10, shape[2]/10 );
+  const geometry = new THREE.BoxBufferGeometry( ff(shape[0]), ff(shape[1]), ff(shape[2]) );
 
   // create a default (white) Basic material
   const material = new THREE.MeshStandardMaterial( { color: 0x800080 } );
@@ -62,13 +69,13 @@ function rotatingCube(x, shape){
 
   mesh.position.set(x, 0, 0);
   
-  const f = () => {
-    mesh.rotation.x += 0.01;
-    // mesh.rotation.y += 0.01;
-    // mesh.rotation.z += 0.01;
-  }
+  // const f = () => {
+  //   mesh.rotation.x += 0.01;
+  //   // mesh.rotation.y += 0.01;
+  //   // mesh.rotation.z += 0.01;
+  // }
 
-  callbacks.push(f);
+  // callbacks.push(f);
   
   return mesh;
 }
@@ -78,6 +85,7 @@ function displayModel(scene){
   let x = 0;
   for(let layer in model.weights){
     let size = model.weights[layer][0].shape;
+    log(layer);
     log(size);
     x += 1;
 
@@ -87,7 +95,11 @@ function displayModel(scene){
     scene.add( rotatingCube(x, size.slice(-3)) );
   }
 
-  log("Layer depth: " + x);
+  // every object is initially created at ( x, 0, 0 )
+  // we'll move the camera back a bit so that we can view the scene
+  camera.position.set( x/2, 20, x );
+  controls.target.set( x/2, 0, 0);
+  controls.update();
 }
 
 let controls;
