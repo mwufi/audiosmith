@@ -10,59 +10,47 @@ const offlineCtx = new OfflineAudioContext(nchannels, length, sr);
 const source = offlineCtx.createBufferSource();
 
 const btn = document.querySelector('button');
+const DATASHAPE = [1024, 1];
 
-class Canvas {
-  constructor(elem){
-    this.canvas = document.querySelector(elem);
-    
-    if(this.canvas.getContext){
-      this.ctx = this.canvas.getContext('2d');
-    }
+function getModel(){
+  const input = tf.input({shape: DATASHAPE});
 
-    this.width = 1024;
-    this.height = 300;
-    
-    console.log(this.ctx);
-  }
+  // First layer uses relu activation, second layer uses softmax activation
+  const conv1 = tf.layers.conv1d({kernelSize: 10, filters: 4, stride: 1, dilationRate: 4, activation: 'relu', kernelInitializer: 'leCunNormal'});
+  const conv2 = tf.layers.conv1d({kernelSize: 10, filters: 4, stride: 5, dilationRate: 1, activation: 'softmax', kernelInitializer: 'leCunNormal'});
+  const conv3 = tf.layers.conv1d({kernelSize: 10, filters: 4, stride: 5, dilationRate: 1, activation: 'softmax', kernelInitializer: 'leCunNormal'});
 
-  wash(){
-    this.ctx.fillStyle = "rgba(0, 120, 0, 0.01)";
-    this.ctx.fillRect(0, 0, this.width, this.height);
-  }
+  // Obtain the output symbolic tensor by applying the layers on the input.
+  // const output = conv2.apply(conv1.apply(input));
 
-  plot(dataArray, transform = null){
-    if (!this.ctx){
-      console.log("Unable to get canvas!");
-      return;
-    }
+  // Create the model based on the inputs.
+  const model = tf.model({inputs: input, outputs: conv3.apply(conv2.apply(conv1.apply(input)))});
 
-    let f = this.ctx;
-    f.lineWidth = 2;
-    f.strokeStyle = 'white';
-    f.beginPath();
+  console.log("THIS IS MODEL")
+  console.log(model);
+  return model;
 
-    let preprocess = transform? transform : (x => x);
-    let sliceWidth = 1;
-    let x = 0;
-    for (let i=0; i < dataArray.length; i++){
-      var v = preprocess(dataArray[i]);
-      var y = v * HEIGHT / 2;
-
-      if (i==0){
-        f.moveTo(x, y);
-      }else{
-        f.lineTo(x, y);
-      }
-
-      x += sliceWidth;
-    }
-
-    f.lineTo(this.width, this.height/2);
-    f.stroke();
-  }
 }
 
-const HEIGHT = 300;
+let model = getModel();
+
+
+/* Tests to see if the model can take a 1024x1 input
+*/
+function testNetwork(dataArray){
+  let real = tf.tensor1d(dataArray);
+  const dreal = real.reshape([1].concat(DATASHAPE));
+
+  dreal.data().then( x => console.log("Tensor input:", x.length, x.slice(0, 20)));
+  model.predict(dreal).data().then( x => console.log("Model output:", x.length, x.slice(0, 20)));
+}
+
+let print = 0;
+function runNetwork(dataArray, callback){
+  let real = tf.tensor1d(dataArray);
+  const dreal = real.reshape([1].concat(DATASHAPE));
+  model.predict(dreal).data().then(callback);
+}
 
 /* Returns a draw() function that you can call to start the
    drawing process
@@ -76,27 +64,93 @@ function setUp(analyser, canvas){
   analyser.fftSize = 2048;
   var bufferLength = analyser.frequencyBinCount;
   var dataArray = new Uint8Array(bufferLength);
-  console.log(bufferLength);
+  console.log("Buffer length", bufferLength);
 
-  let f = canvas.ctx;
-  
-  let print = 0;
+  testNetwork(dataArray);
+
   draw = () => {
     if (!analyser){
       console.log("ok");
       return;
     }
 
-    analyser.getByteFrequencyData(dataArray);
+    analyser.getByteTimeDomainData(dataArray);
     requestAnimationFrame(draw);
 
-    if (print++ % 10 == 0) console.log(dataArray.slice(0, 50));
     
     canvas.wash();
-    canvas.plot(dataArray, x => x / 128.0);
+    runNetwork(dataArray, output => {
+      canvas.plot(output, x => x);
+      if (print++ % 10 == 0) console.log("Tensor output:", output.length, output.slice(0, 50));
+    });
+
   }
 
   return draw;
+}
+
+
+class Canvas {
+  constructor(elem){
+    this.canvas = document.querySelector(elem);
+    
+    if(this.canvas.getContext){
+      this.ctx = this.canvas.getContext('2d');
+    }
+
+    this.width = 1024;
+    this.height = 600;
+    
+    console.log(this.ctx);
+  }
+
+  wash(){
+    this.ctx.fillStyle = "rgba(0, 60, 0, 0.1)";
+    this.ctx.fillRect(0, 0, this.width, this.height);
+  }
+
+  plot(dataArray, transform = null){
+    if (!this.ctx){
+      console.log("Unable to get canvas!");
+      return;
+    }
+
+    let f = this.ctx;
+    f.lineWidth = 2;
+
+    let preprocess = transform? transform : (x => x);
+    let cumulative = 0;
+
+    let sliceWidth = 2;
+    let width = this.width /2;
+
+    let rows = Math.round(dataArray.length / width);
+
+    const makeColor = row => {
+      const transparency = 1.0;
+      return 'rgba(255,255,255,' + transparency + ')';
+    }
+
+    // changing this part lets you choose which part of the data to see
+    for(let row = 0; row < rows; row++){
+      f.strokeStyle = makeColor(row);
+      f.beginPath();
+      let x = 0;
+      for (let i=0; i < width; i++){
+        var v = preprocess(dataArray[i + row * width]);
+        var y = v * this.height / 2 + 0.9 * this.height * row / rows;
+  
+        if (i==0){
+          f.moveTo(x, y);
+        }else{
+          f.lineTo(x, y);
+        }
+  
+        x += sliceWidth;
+      }
+      f.stroke();
+    }
+  }
 }
 
 
