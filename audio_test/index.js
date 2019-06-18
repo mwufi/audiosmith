@@ -25,9 +25,40 @@ class Canvas {
     console.log(this.ctx);
   }
 
-  clear(){
+  wash(){
     this.ctx.fillStyle = "rgba(0, 120, 0, 0.01)";
     this.ctx.fillRect(0, 0, this.width, this.height);
+  }
+
+  plot(dataArray, transform = null){
+    if (!this.ctx){
+      console.log("Unable to get canvas!");
+      return;
+    }
+
+    let f = this.ctx;
+    f.lineWidth = 2;
+    f.strokeStyle = 'white';
+    f.beginPath();
+
+    let preprocess = transform? transform : (x => x);
+    let sliceWidth = 1;
+    let x = 0;
+    for (let i=0; i < dataArray.length; i++){
+      var v = preprocess(dataArray[i]);
+      var y = v * HEIGHT / 2;
+
+      if (i==0){
+        f.moveTo(x, y);
+      }else{
+        f.lineTo(x, y);
+      }
+
+      x += sliceWidth;
+    }
+
+    f.lineTo(this.width, this.height/2);
+    f.stroke();
   }
 }
 
@@ -59,31 +90,10 @@ function setUp(analyser, canvas){
     analyser.getByteFrequencyData(dataArray);
     requestAnimationFrame(draw);
 
-    canvas.clear();
-    f.lineWidth = 2;
-    f.strokeStyle = 'white';
-    f.beginPath();
-
     if (print++ % 10 == 0) console.log(dataArray.slice(0, 50));
-
-    let transform = x => x / 128.0;
-    let sliceWidth = 1;
-    let x = 0;
-    for (let i=0; i < bufferLength; i++){
-      var v = transform(dataArray[i])
-      var y = v * HEIGHT / 2;
-
-      if (i==0){
-        f.moveTo(x, y);
-      }else{
-        f.lineTo(x, y);
-      }
-
-      x += sliceWidth;
-    }
-
-    f.lineTo(canvas.width, canvas.height/2);
-    f.stroke();
+    
+    canvas.wash();
+    canvas.plot(dataArray, x => x / 128.0);
   }
 
   return draw;
@@ -144,10 +154,11 @@ function getData(){
         scriptNode.connect(analyser);
         analyser.connect(audioCtx.destination);
 
-        // song.onended = () => {
-        //   song.disconnect(scriptNode);
-        //   scriptNode.disconnect(audioCtx.destination);
-        // }
+        song.onended = () => {
+          song.disconnect(scriptNode);
+          scriptNode.disconnect(analyser);
+          analyser.disconnect(audioCtx.destination);
+        }
 
         btn.onclick = () => {
           song.start();
